@@ -26,3 +26,12 @@
     ```
     npm install
     ```
+
+
+
+
+---
+TODO:
+
+- Connect logger
+- Create function for saving to CSV
