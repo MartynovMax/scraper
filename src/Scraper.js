@@ -3,20 +3,35 @@ import request from 'request';
 import cheerio from 'cheerio';
 import moment from 'moment';
 
+import EventManager from './EventManager';
+
 
 
 export default class Scraper {
-  constructor(name, options) {
-    this._eventNames = [
+
+  /**
+   * @param  {ScraperConfig} CONFIG
+   * @param  {Object} options
+   */
+  constructor(CONFIG, options) {
+    if (!CONFIG) throw Error('Config object is empty');
+
+    this.CONFIG  = CONFIG;
+    this.options = options || {};
+
+    this.EventManager = new EventManager([
       'start',
       'finish',
       'error',
-    ];
-    this._eventHandlers = [];
+    ]);
   }
 
 
 
+
+  /**
+   * @param  {Object} options
+   */
   requestPage(options) {
     return new Promise((resolve, reject) => {  
       request.get(options, (err, res, buffer)  => {
@@ -32,6 +47,9 @@ export default class Scraper {
 
 
 
+  /**
+   * @param  {Object} item
+   */
   save(items) {
     return new Promise((resolve, reject) => {  
       if (!items) return resolve();
@@ -54,61 +72,33 @@ export default class Scraper {
 
   error() {
     console.error.apply(console, arguments);
-    this._triggerEvent('error', arguments);
+    this.EventManager.triggerEvent('error', arguments);
+  }
+
+
+
+  on() {
+    this.EventManager.on.apply(this.EventManager, arguments);
+  }
+
+
+
+  off() {
+    this.EventManager.off.apply(this.EventManager, arguments);
   }
 
 
 
   processStart() {
-    this.log(`Start scraping at ${moment().format('hh:mm:ss DD/MM/YYYY')}`);
-    this._triggerEvent('start');
+    this.log(`Start scraping at ${moment().format(this.CONFIG.logDateFormat)}`);
+    this.EventManager.triggerEvent('start');
   }
 
 
 
   processFinish() {
-    this.log(`Finish scraping at ${moment().format('hh:mm:ss DD/MM/YYYY')}`);
-    this._triggerEvent('finish');
-  }
-
-
-
-  on(eventName, handler) {
-    if (!eventName) throw Error('Event name is empty');
-    if (_.indexOf(this._eventNames, eventName) === -1) throw Error(`Unknown event name: ${eventName}`);
-    if (!handler) throw Error(`Handler for event ${eventName} is undefined`);
-    if (typeof(handler) !== 'function') throw Error(`Handler for event ${eventName} should be a function`);
-    if (!this._eventHandlers[eventName]) this._eventHandlers[eventName] = [];
-    this._eventHandlers[eventName].push(handler);
-  }
-
-
-
-  off(eventName, handler) {
-    if (!eventName) throw Error('Event name is empty');
-    if (_.indexOf(this._eventNames, eventName) === -1) throw Error(`Unknown event name: ${eventName}`);
-    if (!this._eventHandlers[eventName] || !this._eventHandlers[eventName].length) return;
-
-    if (!handler) {
-      this._eventHandlers[eventName] = [];
-    } else {
-      _.remove(this._eventHandlers[eventName], (eventHandler) => {
-        return eventHandler === handler;
-      });
-    }
-  }
-
-
-
-  _triggerEvent(eventName, data) {
-    if (!eventName) throw Error('Event name is empty');
-    if (_.indexOf(this._eventNames, eventName) === -1) throw Error(`Unknown event name: ${eventName}`);
-
-    let handlers = this._eventHandlers[eventName];
-    if (!Array.isArray(handlers) || !handlers.length) return;
-    
-    for (let handler of handlers) {
-      handler(data);
-    }
+    this.log(`Finish scraping at ${moment().format(this.CONFIG.logDateFormat)}`);
+    this.EventManager.triggerEvent('finish');
+    this.EventManager.clear();
   }
 }

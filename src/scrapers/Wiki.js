@@ -1,15 +1,26 @@
-import Scraper from '../Scraper';
 import _ from 'lodash';
 import async from 'async';
 
+import Scraper from '../Scraper';
+import DB_CSV from '../DB_CSV';
+import ScraperConfig from '../interfaces/ScraperConfig';
+
+
+
 export default class Wiki extends Scraper {
   constructor(options) {
-    super();
+    const CONFIG  = new ScraperConfig({
+      dbType          : 'CSV',
+      dbName          : 'wiki_images',
+      requestsInterval: 50,
+    });
+
+    super(CONFIG, options);
 
     this.baseUrl = 'https://en.wikipedia.org/';
-    this.options = options || {};
+    this.DB      = new DB_CSV(this.CONFIG.dbName);
 
-    this.start();
+    // this.DB.findOne();
   }
 
 
